@@ -3,8 +3,11 @@
 namespace App\Entity;
 
 use App\Repository\AnimalRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert; // Add this line
 
 
@@ -14,41 +17,60 @@ class Animal
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups('animal_info')]
     private ?int $id = null;
 
     #[Assert\NotBlank]
     #[ORM\Column(length: 255)]
+    #[Groups('animal_info')]
     private ?string $name = null;
     #[Assert\NotBlank]
     #[ORM\Column(length: 255)]
+    #[Groups('animal_info')]
     private ?string $species = null;
 
     #[Assert\NotBlank]
     #[ORM\Column(length: 255)]
+    #[Groups('animal_info')]
     private ?string $habitatArea = null;
 
     #[Assert\NotBlank]
     #[ORM\Column(length: 255)]
+    #[Groups('animal_info')]
     private ?string $health_state = null;
 
     #[Assert\NotBlank]
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups('animal_info')]
     private ?string $vet_review = null;
 
     #[Assert\NotBlank]
     #[ORM\Column(length: 255)]
+    #[Groups('animal_info')]
     private ?string $food_type = null;
 
     #[Assert\NotBlank]
     #[ORM\Column(length: 255)]
+    #[Groups('animal_info')]
     private ?string $food_quantity = null;
 
     #[Assert\NotBlank]
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Groups('animal_info')]
     private ?\DateTimeInterface $last_review = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups('animal_info')]
     private ?string $details = null;
+
+    #[ORM\OneToMany(targetEntity: AnimalImage::class, mappedBy: 'animal')]
+    #[Groups('animal_info')]
+    private Collection $animalImages;
+
+    public function __construct()
+    {
+        $this->animalImages = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -175,5 +197,35 @@ class Animal
         $this->setFoodQuantity($animal->food_quantity);
         $this->setLastReview($animal->last_review);
         $this->setDetails($animal->details);
+    }
+
+    /**
+     * @return Collection<int, AnimalImage>
+     */
+    public function getAnimalImages(): Collection
+    {
+        return $this->animalImages;
+    }
+
+    public function addAnimalImage(AnimalImage $animalImage): static
+    {
+        if (!$this->animalImages->contains($animalImage)) {
+            $this->animalImages->add($animalImage);
+            $animalImage->setAnimalId($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAnimalImage(AnimalImage $animalImage): static
+    {
+        if ($this->animalImages->removeElement($animalImage)) {
+            // set the owning side to null (unless already changed)
+            if ($animalImage->getAnimalId() === $this) {
+                $animalImage->setAnimalId(null);
+            }
+        }
+
+        return $this;
     }
 }
