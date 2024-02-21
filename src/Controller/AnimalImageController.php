@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Context\Normalizer\ObjectNormalizerContextBuilder;
@@ -29,12 +30,21 @@ class AnimalImageController extends AbstractController
             ->toArray();
     }
     #[Route('api/animal/{id}/image', name: 'animal_image_get', methods: 'GET')]
-    public function get($id): JsonResponse {
+    public function get($id): Response
+    {
         $animal = $this->animalRepository->find($id);
-        $animalImage = $animal->getAnimalImages();
+        $animalImage = $animal->getAnimalImages()[0];
 
-        $animalImageData = $this->serializer->normalize($animalImage, 'json', $this->context);
-        return $this->json($animalImageData);
+        $imagePath = $this->getParameter('kernel.project_dir') . '/public/uploads/photos/' . $animalImage->getImageFileName();
+
+        $imageContent = file_get_contents($imagePath);
+
+        $response = new Response($imageContent);
+
+        $response->headers->set('Content-Type', 'image/jpeg');
+
+        return $response;
+
     }
     #[Route('api/animal/{id}/image', name: 'animal_image_post', methods: 'POST')]
     public function post(Request $request, $id): JsonResponse {
