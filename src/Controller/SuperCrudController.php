@@ -2,10 +2,13 @@
 
 namespace App\Controller;
 
+use App\Controller\Animal\AnimalImageController;
+use App\Entity\Animal;
 use App\Services\ValidationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,17 +25,6 @@ class SuperCrudController extends AbstractController
     ) {
 
     }
-    public function getAll(EntityRepository $repository, array $context = []): JsonResponse {
-        $elements = $repository->findAll();
-
-        if (!$elements) {
-            return new JsonResponse(['error' => 'Entity not found'], Response::HTTP_NOT_FOUND);
-        }
-
-        $elementsData = $this->serializer->normalize($elements, 'json', $context);
-        return $this->json($elementsData);
-
-    }
 
     public function get(EntityRepository $repository, $id, array $context = []): JsonResponse {
         $element = $repository->find($id);
@@ -41,8 +33,40 @@ class SuperCrudController extends AbstractController
             return new JsonResponse(['error' => 'Entity not found'], Response::HTTP_NOT_FOUND);
         }
 
+        if($element instanceof Animal) {
+            $element->setLastReview($element->getLastReview().format('d/m/Y'));
+        }
+
         $elementData = $this->serializer->normalize($element, 'json', $context);
         return $this->json($elementData);
+    }
+
+    public function getAll(EntityRepository $repository, array $context = []): JsonResponse {
+        $elements = $repository->findBy([], ['id' => 'ASC']);
+
+
+        if (!$elements) {
+            return new JsonResponse([], Response::HTTP_OK);
+        }
+
+
+        $elementsData = $this->serializer->normalize($elements, 'json', $context);
+        return $this->json($elementsData);
+
+    }
+
+    public function getAllBy(EntityRepository $repository, string $criteria, string $value, array $context = []): JsonResponse {
+
+
+        $elements = $repository->findBy(array([$criteria => $value]));
+
+        if (!$elements) {
+            return new JsonResponse(['error' => 'Entity not found'], Response::HTTP_NOT_FOUND);
+        }
+
+
+        $elementsData = $this->serializer->normalize($elements, 'json', $context);
+        return $this->json($elementsData);
     }
 
     public function create(Request $request, string $class, array $context = []): JsonResponse {
@@ -76,18 +100,17 @@ class SuperCrudController extends AbstractController
     }
 
     public function delete(EntityRepository $repository, $id, array $context = []): JsonResponse {
-        $element = $this->$repository->find($id);
+        $element = $repository->find($id);
 
         if (!$element) {
             return new JsonResponse(['error' => 'Entity not found'], Response::HTTP_NOT_FOUND);
         }
 
-        $elementData = $this->serializer->normalize($element, 'json', $context);
+        //$elementData = $this->serializer->normalize($element, 'json', $context);
 
         $this->em->remove($element);
         $this->em->flush();
 
-        return $this->json($elementData);
-
+        return new JsonResponse(['status' => 'Entity deleted'], Response::HTTP_OK);
     }
 }

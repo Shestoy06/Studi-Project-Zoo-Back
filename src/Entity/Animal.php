@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Controller\Animal\AnimalController;
 use App\Repository\AnimalRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -22,40 +23,23 @@ class Animal
 
     #[Assert\NotBlank]
     #[ORM\Column(length: 255)]
-    #[Groups('animal_info')]
+    #[Groups(['animal_info', 'habitat_info'])]
     private ?string $name = null;
     #[Assert\NotBlank]
     #[ORM\Column(length: 255)]
-    #[Groups('animal_info')]
+    #[Groups(['animal_info', 'habitat_info'])]
     private ?string $species = null;
 
-    #[Assert\NotBlank]
-    #[ORM\Column(length: 255)]
+    #[ORM\ManyToOne(inversedBy: 'animals')]
     #[Groups('animal_info')]
-    private ?string $habitatArea = null;
-
-    #[Assert\NotBlank]
-    #[ORM\Column(length: 255)]
-    #[Groups('animal_info')]
-    private ?string $health_state = null;
+    private ?AnimalHabitat $animalHabitat = null;
 
     #[Assert\NotBlank]
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups('animal_info')]
+    #[Groups(['animal_info', 'habitat_info'])]
     private ?string $vet_review = null;
 
-    #[Assert\NotBlank]
-    #[ORM\Column(length: 255)]
-    #[Groups('animal_info')]
-    private ?string $food_type = null;
-
-    #[Assert\NotBlank]
-    #[ORM\Column(length: 255)]
-    #[Groups('animal_info')]
-    private ?string $food_quantity = null;
-
-    #[Assert\NotBlank]
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     #[Groups('animal_info')]
     private ?\DateTimeInterface $last_review = null;
 
@@ -63,13 +47,25 @@ class Animal
     #[Groups('animal_info')]
     private ?string $details = null;
 
-    #[ORM\OneToMany(targetEntity: AnimalImage::class, mappedBy: 'animal')]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Groups('animal_info')]
+    private ?string $animalIdMongo = null;
+
+    #[ORM\OneToMany(targetEntity: AnimalImage::class, mappedBy: 'animal')]
+    #[Groups(['animal_info', 'habitat_info'])]
     private Collection $animalImages;
+
+    #[ORM\OneToMany(targetEntity: AnimalReview::class, mappedBy: 'animal', cascade: ["remove"])]
+    private Collection $animalReviews;
+
+    #[ORM\OneToMany(targetEntity: AnimalFood::class, mappedBy: 'animal', cascade: ["remove"])]
+    private Collection $animalFood;
 
     public function __construct()
     {
         $this->animalImages = new ArrayCollection();
+        $this->animalReviews = new ArrayCollection();
+        $this->animalFood = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -101,29 +97,6 @@ class Animal
         return $this;
     }
 
-    public function getHabitatArea(): ?string
-    {
-        return $this->habitatArea;
-    }
-
-    public function setHabitatArea(string $habitatArea): static
-    {
-        $this->habitatArea = $habitatArea;
-
-        return $this;
-    }
-
-    public function getHealthState(): ?string
-    {
-        return $this->health_state;
-    }
-
-    public function setHealthState(string $health_state): static
-    {
-        $this->health_state = $health_state;
-
-        return $this;
-    }
 
     public function getVetReview(): ?string
     {
@@ -137,33 +110,15 @@ class Animal
         return $this;
     }
 
-    public function getFoodType(): ?string
-    {
-        return $this->food_type;
-    }
-
-    public function setFoodType(string $food_type): static
-    {
-        $this->food_type = $food_type;
-
-        return $this;
-    }
-
-    public function getFoodQuantity(): ?string
-    {
-        return $this->food_quantity;
-    }
-
-    public function setFoodQuantity(string $food_quantity): static
-    {
-        $this->food_quantity = $food_quantity;
-
-        return $this;
-    }
-
     public function getLastReview(): ?\DateTimeInterface
     {
-        return $this->last_review;
+        if ($this->animalReviews->isEmpty()) {
+            return null;
+        }
+
+        $reviews = $this->animalReviews->toArray();
+        $lastReview = $reviews[count($reviews) - 1]->getDate();
+        return $lastReview;
     }
 
     public function setLastReview(\DateTimeInterface $last_review): static
@@ -185,16 +140,23 @@ class Animal
         return $this;
     }
 
+    public function getAnimalIdMongo(): ?string
+    {
+        return $this->animalIdMongo;
+    }
+
+    public function setAnimalIdMongo(?string $animalIdMongo): static
+    {
+        $this->animalIdMongo = $animalIdMongo;
+
+        return $this;
+    }
     public function setProps(
         Animal $animal
     ) : void {
         $this->setName($animal->name);
         $this->setSpecies($animal->species);
-        $this->setHabitatArea($animal->habitatArea);
-        $this->setHealthState($animal->health_state);
         $this->setVetReview($animal->vet_review);
-        $this->setFoodType($animal->food_type);
-        $this->setFoodQuantity($animal->food_quantity);
         $this->setLastReview($animal->last_review);
         $this->setDetails($animal->details);
     }
@@ -223,6 +185,81 @@ class Animal
             // set the owning side to null (unless already changed)
             if ($animalImage->getAnimalId() === $this) {
                 $animalImage->setAnimalId(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getAnimalHabitat(): ?AnimalHabitat
+    {
+        return $this->animalHabitat;
+    }
+
+    public function getAnimalHabitatName(): string {
+        return $this->animalHabitat->getName();
+    }
+    public function setAnimalHabitat(?AnimalHabitat $animalHabitat): static
+    {
+        $this->animalHabitat = $animalHabitat;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, AnimalReview>
+     */
+    public function getAnimalReviews(): Collection
+    {
+        return $this->animalReviews;
+    }
+
+    public function addAnimalReview(AnimalReview $animalReview): static
+    {
+        if (!$this->animalReviews->contains($animalReview)) {
+            $this->animalReviews->add($animalReview);
+            $animalReview->setAnimal($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAnimalReview(AnimalReview $animalReview): static
+    {
+        if ($this->animalReviews->removeElement($animalReview)) {
+            // set the owning side to null (unless already changed)
+            if ($animalReview->getAnimal() === $this) {
+                $animalReview->setAnimal(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, AnimalFood>
+     */
+    public function getAnimalFood(): Collection
+    {
+        return $this->animalFood;
+    }
+
+    public function addAnimalFood(AnimalFood $animalFood): static
+    {
+        if (!$this->animalFood->contains($animalFood)) {
+            $this->animalFood->add($animalFood);
+            $animalFood->setAnimal($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAnimalFood(AnimalFood $animalFood): static
+    {
+        if ($this->animalFood->removeElement($animalFood)) {
+            // set the owning side to null (unless already changed)
+            if ($animalFood->getAnimal() === $this) {
+                $animalFood->setAnimal(null);
             }
         }
 
