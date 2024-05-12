@@ -45,4 +45,13 @@ class AnimalRepository extends ServiceEntityRepository
 //            ->getOneOrNullResult()
 //        ;
 //    }
+    public function findAllByHabitat($habitatName): array
+    {
+        return $this->createQueryBuilder('a')
+        ->join('a.animalHabitat', 'h')
+        ->where('h.name = :habitatName')
+        ->setParameter('habitatName', $habitatName)
+        ->getQuery()
+        ->getResult();
+    }
 }
