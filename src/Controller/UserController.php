@@ -62,6 +62,7 @@ class UserController extends AbstractController
         $user = $this->userRepository->findOneBy(['id' => $id]);
         $user->setUsername($username);
         $user->setRole($role);
+        $this->em->flush();
 
         return new JsonResponse(['Success' => 'user updated'], Response::HTTP_OK);
 
