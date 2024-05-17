@@ -35,18 +35,14 @@ class UserController extends AbstractController
     {
         $post_data = json_decode($request->getContent(), true);
         $username = $post_data['username'];
-        $password = $post_data['password'];
 
         $user = $this->userRepository->findOneBy(['username' => $username]);
 
-        if($user) {
-            if($user->getPassword() === $password) {
-                $userData = $this->serializer->normalize($user, 'json');
-                return $this->json($userData);
-            }
+        if(!$user) {
+            return new JsonResponse(['error' => 'User not found']);
         }
 
-        return new JsonResponse(['message' => 'User didn\'t found'], Response::HTTP_OK);
+        return new JsonResponse(['username' => $user->getUsername(), 'password' => $user->getPassword(), 'role' => $user->getRole()], Response::HTTP_OK);
 
     }
 
