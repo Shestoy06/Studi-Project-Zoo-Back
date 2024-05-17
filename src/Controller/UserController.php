@@ -55,7 +55,16 @@ class UserController extends AbstractController
     #[Route('api/user/{id}', name: 'update_user', methods: 'PUT')]
     public function update(Request $request, $id): JsonResponse
     {
-        return $this->controller->update($this->userRepository,$request, $id, User::class);
+        $post_data = json_decode($request->getContent(), true);
+        $username = $post_data['username'];
+        $role = $post_data['role'];
+
+        $user = $this->userRepository->findOneBy(['id' => $id]);
+        $user->setUsername($username);
+        $user->setRole($role);
+
+        return new JsonResponse(['Success' => 'user updated'], Response::HTTP_OK);
+
     }
 
     #[Route('api/user/{id}', name: 'delete_user', methods: 'DELETE')]
