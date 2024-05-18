@@ -4,6 +4,10 @@ Web app for zoo that contains the client and back-office (admin panel) sides as 
 Backend
 Made with Symfony and hate
 
-Deployed with GH-pages, access by this link: https://shestoy06.github.io/zoo-front
+Deployed with GH-pages, access by this link: https://shestoy06.github.io/zoo-front  
+
+### Start the project local
+1. <code>docker composer up</code>
+2. <code>symfony serve</code>
 
 
