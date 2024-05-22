@@ -41,19 +41,13 @@ class AnimalImageController extends AbstractController
 
         if (count($animalImages)) {
             foreach ($animalImages as $image) {
-                $imagePath = $this->getParameter('kernel.project_dir') . '/public/uploads/photos/' . $image->getImageFileName();
-
-                $imageContent = file_get_contents($imagePath);
-
-                if ($imageContent === false) {
-                    return new JsonResponse(['error' => 'Error reading image file']);
+                if(!$image->getImageEncoded()) {
+                    // do nothing
                 }
-
-                $base64Image = base64_encode($imageContent);
-
-                $imageItem = ['id' => $image->getId(), 'file' => $base64Image];
-
-                $images[] = $imageItem;
+                else {
+                    $imageItem = ['id' => $image->getId(), 'file' => $image->getImageEncoded()];
+                    $images[] = $imageItem;
+                }
             }
             $response =  new JsonResponse($images);
             $response->headers->set('Content-Type', 'image/jpeg');
@@ -106,18 +100,12 @@ class AnimalImageController extends AbstractController
             $files = [];
 
             foreach ($animalImages as $image) {
-                $imagePath = $this->getParameter('kernel.project_dir') . '/public/uploads/photos/' . $image->getImageFileName();
-
-                $imageContent = file_get_contents($imagePath);
-
-                if ($imageContent === false) {
-                    return new JsonResponse(['error' => 'Error reading image file']);
+                $base64Image = $image->getImageEncoded();
+                if(!$base64Image) {
+                    $files[] = 'No image encoded';
+                } else {
+                    $files[] = $base64Image;
                 }
-
-                $base64Image = base64_encode($imageContent);
-                $files[] = $base64Image;
-
-
             }
             $imageItem = ['animal' => $animal->getName(), 'animalSpecies' => $animal->getSpecies(), 'animalState' => $animal->getVetReview(), 'animalHabitat' => $animal->getAnimalHabitatName(), 'animalIdMongo' => $animal->getAnimalIdMongo(), 'files' => $files];
             $images[] = $imageItem;
@@ -133,21 +121,9 @@ class AnimalImageController extends AbstractController
         $uploadedFile = $post_data['file'];
         $uploadedFileName = $post_data['fileName'];
 
-        preg_match('/^data:image\/(\w+);base64,/', $uploadedFile, $matches);
-        $imageType = $matches[1];
-
-        $base64Image = str_replace('data:image/'.$imageType.';base64,', '', $uploadedFile);
-        $imageContent = base64_decode($base64Image);
-
-        $uploadDirectory = $this->getParameter('kernel.project_dir') . '/public/uploads/photos/';
-        $filename = $uploadedFileName;
-
-        $filePath = $uploadDirectory . $filename;
-
-        file_put_contents($filePath, $imageContent);
-
         $animalImage = new AnimalImage();
-        $animalImage->setImageFileName($filename);
+        $animalImage->setImageFileName($uploadedFileName);
+        $animalImage->setImageEncoded($uploadedFile);
         $this->em->persist($animalImage);
 
         $animal = $this->animalRepository->find($id);
