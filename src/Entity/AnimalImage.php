@@ -21,6 +21,10 @@ class AnimalImage
     #[Groups(['animal_info', 'habitat_info'])]
     private ?string $ImageFileName = null;
 
+    #[ORM\Column(length: 10000000)]
+    #[Groups(['animal_info', 'habitat_info'])]
+    private ?string $imageEncoded = null;
+
     #[ORM\ManyToOne(inversedBy: 'animalImages')]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
     private ?Animal $animal = null;
