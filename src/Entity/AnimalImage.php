@@ -21,7 +21,7 @@ class AnimalImage
     #[Groups(['animal_info', 'habitat_info'])]
     private ?string $ImageFileName = null;
 
-    #[ORM\Column(length: 10000000)]
+    #[ORM\Column(length: 10000000, nullable: true)]
     #[Groups(['animal_info', 'habitat_info'])]
     private ?string $imageEncoded = null;
 
@@ -42,6 +42,18 @@ class AnimalImage
     public function setImageFileName(string $ImageFileName): static
     {
         $this->ImageFileName = $ImageFileName;
+
+        return $this;
+    }
+
+    public function getImageEncoded(): ?string
+    {
+        return $this->imageEncoded;
+    }
+
+    public function setImageEncoded(string $imageEncoded): static
+    {
+        $this->imageEncoded = $imageEncoded;
 
         return $this;
     }
