@@ -33,7 +33,7 @@ class AnimalHabitat
     #[Groups('habitat_info')]
     private Collection $animals;
 
-    #[ORM\OneToMany(targetEntity: AnimalHabitatImage::class, mappedBy: 'habitat')]
+    #[ORM\OneToMany(targetEntity: AnimalHabitatImage::class, mappedBy: 'habitat', cascade: ["remove"])]
     #[Groups('habitat_info')]
     private Collection $animalHabitatImages;
 
