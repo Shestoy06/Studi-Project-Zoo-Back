@@ -37,28 +37,19 @@ class AnimalHabitatImageController extends AbstractController
     public function get($id): Response
     {
         $habitat = $this->animalHabitatRepository->find($id);
-
         $habitatImages = $habitat->getAnimalHabitatImages();
-
-
 
         $images = [];
 
         if (count($habitatImages)) {
             foreach ($habitatImages as $image) {
-                $imagePath = $this->getParameter('kernel.project_dir') . '/public/uploads/photos/' . $image->getImageFileName();
-
-                $imageContent = file_get_contents($imagePath);
-
-                if ($imageContent === false) {
-                    return new JsonResponse(['error' => 'Error reading image file']);
+                if(!$image->getImageEncoded()) {
+                    // do nothing
                 }
-
-                $base64Image = base64_encode($imageContent);
-
-                $imageItem = ['id' => $image->getId(), 'file' => $base64Image];
-
-                $images[] = $imageItem;
+                else {
+                    $imageItem = ['id' => $image->getId(), 'file' => $image->getImageEncoded()];
+                    $images[] = $imageItem;
+                }
             }
             $response =  new JsonResponse($images);
             $response->headers->set('Content-Type', 'image/jpeg');
@@ -71,25 +62,12 @@ class AnimalHabitatImageController extends AbstractController
     #[Route('api/habitat/{id}/image', name: 'habitat_image_post', methods: 'POST')]
     public function post(Request $request, $id): JsonResponse {
         $post_data = json_decode($request->getContent(), true);
-
         $uploadedFile = $post_data['file'];
         $uploadedFileName = $post_data['fileName'];
 
-        preg_match('/^data:image\/(\w+);base64,/', $uploadedFile, $matches);
-        $imageType = $matches[1];
-
-        $base64Image = str_replace('data:image/'.$imageType.';base64,', '', $uploadedFile);
-        $imageContent = base64_decode($base64Image);
-
-        $uploadDirectory = $this->getParameter('kernel.project_dir') . '/public/uploads/photos/';
-        $filename = $uploadedFileName;
-
-        $filePath = $uploadDirectory . $filename;
-
-        file_put_contents($filePath, $imageContent);
-
         $habitatImage = new AnimalHabitatImage();
-        $habitatImage->setImageFileName($filename);
+        $habitatImage->setImageFileName($uploadedFileName);
+        $habitatImage->setImageEncoded($uploadedFile);
         $this->em->persist($habitatImage);
 
         $habitat = $this->animalHabitatRepository->find($id);

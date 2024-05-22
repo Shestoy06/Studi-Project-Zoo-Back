@@ -65,16 +65,7 @@ class AnimalHabitatController extends AbstractController
             $animalsNames = [];
 
             foreach ($habitatImages as $image) {
-                $imagePath = $this->getParameter('kernel.project_dir') . '/public/uploads/photos/' . $image->getImageFileName();
-
-                $imageContent = file_get_contents($imagePath);
-
-                if ($imageContent === false) {
-                    return new JsonResponse(['error' => 'Error reading image file']);
-                }
-
-                $base64Image = base64_encode($imageContent);
-                $files[] = $base64Image;
+                $files[] = $image->getImageEncoded();
             }
 
             foreach ($habitatAnimals as $animal) {

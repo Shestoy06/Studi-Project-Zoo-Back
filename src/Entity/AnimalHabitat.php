@@ -37,6 +37,8 @@ class AnimalHabitat
     #[Groups('habitat_info')]
     private Collection $animalHabitatImages;
 
+
+
     public function __construct()
     {
         $this->animals = new ArrayCollection();
@@ -82,6 +84,8 @@ class AnimalHabitat
 
         return $this;
     }
+
+
 
     /**
      * @return Collection<int, Animal>

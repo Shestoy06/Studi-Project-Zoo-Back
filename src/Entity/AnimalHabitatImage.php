@@ -22,6 +22,10 @@ class AnimalHabitatImage
     #[ORM\ManyToOne(inversedBy: 'animalHabitatImages')]
     private ?AnimalHabitat $habitat = null;
 
+    #[ORM\Column(length: 10000000, nullable: true)]
+    #[Groups(['habitat_info'])]
+    private ?string $imageEncoded = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -35,6 +39,18 @@ class AnimalHabitatImage
     public function setImageFileName(string $ImageFileName): static
     {
         $this->ImageFileName = $ImageFileName;
+
+        return $this;
+    }
+
+    public function getImageEncoded(): ?string
+    {
+        return $this->imageEncoded;
+    }
+
+    public function setImageEncoded(string $imageEncoded): static
+    {
+        $this->imageEncoded = $imageEncoded;
 
         return $this;
     }
